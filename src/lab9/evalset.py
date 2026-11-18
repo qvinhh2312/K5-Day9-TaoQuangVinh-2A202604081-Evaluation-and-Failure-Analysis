@@ -38,19 +38,37 @@ def sha12(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()[:12]
 
 
+FM_BY_CLAIM: dict[str, list[str]] = {
+    "C-001": ["FM-03", "FM-04", "FM-07", "FM-08"],
+    "C-002": ["FM-02"],
+    "C-003": ["FM-04", "FM-08"],
+    "C-004": ["FM-02"],
+    "C-005": ["FM-01", "FM-09"],
+    "C-006": ["FM-06"],
+    "C-007": ["FM-02"],
+    "C-008": ["FM-05"],
+    "C-009": ["FM-02"],
+    "C-010": ["FM-03", "FM-07", "FM-08"],
+    "C-011": ["FM-07"],
+    "C-012": ["FM-07"],
+    "C-013": ["FM-02"],
+    "C-014": ["FM-05"],
+}
+
+
 def build(source: Path = SOURCE) -> tuple[int, int]:
     claims = load_jsonl(source)
     items, labels = [], {}
     for n, claim in enumerate(claims, start=1):
         item_id = f"E-{n:03d}"
+        cid = claim["claim_id"]
         items.append({
             "item_id": item_id,
-            "claim_id": claim["claim_id"],
-            # TODO M1: replace [] with the FM-xx codes from your taxonomy that this item exercises.
-            "failure_modes": [],
+            "claim_id": cid,
+            "failure_modes": FM_BY_CLAIM.get(cid, []),
             "provenance": {"source": "lab8_public", "matrix_id": claim.get("matrix_id"),
-                           "from_trace": None, "generator": None,
-                           "label_by": "lab8_matrix", "checked_by": None},
+                           "from_trace": f"swarm:{cid}@11", "generator": None,
+                           "label_by": "lab8_matrix", "checked_by": "Tao Quang Vinh / 2A202604081"},
             "split": "regression",
             "eval_set_version": VERSION,
         })
