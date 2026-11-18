@@ -18,3 +18,22 @@ def test_c002_seeded_regression_fails_and_fixed_passes():
     assert fixed_trial["snapshot"]["refund_vnd"] == 0, "fixed should not issue refund"
     assert fixed_trial["result"]["status"] == "denied"
 
+
+
+def _ctx(trial, label):
+    from pydantic_evals.evaluators import EvaluatorContext
+    return EvaluatorContext(name="t", inputs={}, metadata=None, expected_output=label, output=trial,
+                            duration=0.0, _span_tree=None, attributes={}, metrics={})
+
+
+def test_c002_lab9_graders_catch_the_override_and_the_wrong_refund():
+    from lab9.graders import DbFactKept, RefundAmountCorrect
+    from lab9.trace_case import investigate as inv
+    bad, fixed = inv("seeded_regression", "C-002", 11), inv("fixed", "C-002", 11)
+    label = bad["label"]
+    # first wrong step is event 3 (model_override), before any quote or refund exists
+    assert bad["trial"]["events"][2]["kind"] == "model_override"
+    assert DbFactKept().evaluate(_ctx(bad["trial"], label)).value is False
+    assert RefundAmountCorrect().evaluate(_ctx(bad["trial"], label)).value is False
+    assert DbFactKept().evaluate(_ctx(fixed["trial"], label)).value is True
+    assert RefundAmountCorrect().evaluate(_ctx(fixed["trial"], label)).value is True
